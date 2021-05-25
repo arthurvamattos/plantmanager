@@ -1,21 +1,44 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View, Text, Image } from "react-native";
+import { ptBR } from "date-fns/locale";
+import { formatDistance } from "date-fns";
+import { StyleSheet, View, Text, Image, Alert } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
+
+import { loadPlant, PlantProps, removePlant } from "../libs/storage";
 
 import { Header } from "../components/Header";
-
-import waterDrop from "../assets/waterdrop.png";
-import colors from "../styles/colors";
-import { loadPlant, PlantProps } from "../libs/storage";
-import { formatDistance } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { FlatList } from "react-native-gesture-handler";
-import fonts from "../styles/fonts";
 import { PlantCardSecondary } from "../components/PlantCardSecondary";
+
+import fonts from "../styles/fonts";
+import colors from "../styles/colors";
+import waterDrop from "../assets/waterdrop.png";
 
 export function MyPlants() {
   const [myPlants, setMyPlants] = useState<PlantProps[]>();
   const [loading, setLoading] = useState(true);
   const [nextWaterd, setNextWaterd] = useState<string>();
+
+  function handleRemove(plant: PlantProps) {
+    Alert.alert("Remover", `Deseja remover a ${plant.name}?`, [
+      {
+        text: "Não 🙏",
+        style: "cancel",
+      },
+      {
+        text: "Sim 😥",
+        onPress: async () => {
+          try {
+            await removePlant(plant.id);
+            setMyPlants((oldData) =>
+              oldData?.filter((item) => item.id !== plant.id)
+            );
+          } catch {
+            Alert.alert("Não foi possível remover 😥");
+          }
+        },
+      },
+    ]);
+  }
 
   useEffect(() => {
     async function loadStoregedData() {
@@ -51,7 +74,12 @@ export function MyPlants() {
         <FlatList
           data={myPlants}
           keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => <PlantCardSecondary data={item} />}
+          renderItem={({ item }) => (
+            <PlantCardSecondary
+              data={item}
+              handleRemove={() => handleRemove(item)}
+            />
+          )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 24 }}
         />
